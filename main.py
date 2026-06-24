@@ -2,9 +2,11 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 
+# 1. Instanciacao da API
 app = FastAPI(title="API Inova Lab - Inventario Maker")
 
 
+# 2. O Modelo Pydantic (A "Catraca" de Validacao)
 class ComponenteSchema(BaseModel):
     nome: str = Field(..., min_length=2, description="Nome do componente maker")
     quantidade: int = Field(
@@ -22,6 +24,7 @@ class ComponenteSchema(BaseModel):
     )
 
 
+# 3. Nosso "Banco de Dados" temporario em memoria
 estoque_laboratorio = [
     {
         "id": 1,
@@ -47,6 +50,7 @@ estoque_laboratorio = [
 ]
 
 
+# Rota Raiz
 @app.get("/")
 def raiz():
     return {
@@ -54,19 +58,23 @@ def raiz():
     }
 
 
+# CRUD - READ (Listar todos)
 @app.get("/componentes")
 def listar_componentes():
     return estoque_laboratorio
 
 
+# CRUD - CREATE (Cadastrar novo item)
 @app.post("/componentes", status_code=201)
 def adicionar_componente(novo_componente: ComponenteSchema):
+    # Logica de autoincremento para o ID em memoria
     if estoque_laboratorio:
         maior_id = max(item["id"] for item in estoque_laboratorio)
         novo_id = maior_id + 1
     else:
         novo_id = 1
 
+    # Converte o objeto Pydantic para dicionario e insere o ID
     componente_dict = novo_componente.model_dump()
     componente_dict["id"] = novo_id
 
@@ -77,6 +85,7 @@ def adicionar_componente(novo_componente: ComponenteSchema):
     }
 
 
+# CRUD - UPDATE (Atualizar quantidade ou dados)
 @app.put("/componentes/{componente_id}")
 def atualizar_componente(componente_id: int, dados_atualizados: ComponenteSchema):
     for item in estoque_laboratorio:
@@ -93,6 +102,7 @@ def atualizar_componente(componente_id: int, dados_atualizados: ComponenteSchema
     )
 
 
+# CRUD - DELETE (Remover item do inventario)
 @app.delete("/componentes/{componente_id}")
 def remover_componente(componente_id: int):
     for index, item in enumerate(estoque_laboratorio):
